@@ -8,10 +8,14 @@ import pygame
 import sys
 from pygame.locals import *
 
+# Constants and dictionaries
 # Frames per second
 FPS = 25
 # The top left column where the falling shape is positioned initially
 START_COL = 4
+# Represent a box or empty space for a shape
+EMPTY_BOX = '-'
+FULL_BOX = 'X'
 # Window dimensions
 WINDOW_WIDTH = 640
 WINDOW_HEIGHT = 480
@@ -19,7 +23,7 @@ WINDOW_HEIGHT = 480
 MATRIX_WIDTH = 12
 MATRIX_HEIGHT = 22
 # Fill the matrix with zeros
-ARENA = [[0 for x in range(MATRIX_WIDTH)] for x in range(MATRIX_HEIGHT)]
+MATRIX = [[0 for x in range(MATRIX_WIDTH)] for x in range(MATRIX_HEIGHT)]
 #Box width in pixels. Each shape is composed of boxes.
 BOX_SIZE = 20
 # Define 16 web colors
@@ -53,40 +57,32 @@ SHAPE_I = (("----"), ("XXXX"), ("----"), ("----")), \
           (("-X--"), ("-X--"), ("-X--"), ("-X--")), \
           (("----"), ("XXXX"), ("----"), ("----")), \
           (("-X--"), ("-X--"), ("-X--"), ("-X--"))
-
 SHAPE_J = (("--X-"), ("--X-"), ("-XX-"), ("----")), \
           (("-X--"), ("-XXX"), ("----"), ("----")), \
           (("-XX-"), ("-X--"), ("-X--"), ("----")), \
           (("-XXX"), ("---X"), ("----"), ("----"))
-
 SHAPE_L = (("-X--"), ("-X--"), ("-XX-"), ("----")), \
           (("XXX-"), ("X---"), ("----"), ("----")), \
           (("-XX-"), ("--X-"), ("--X-"), ("----")), \
           (("--X-"), ("XXX-"), ("----"), ("----"))
-
 SHAPE_O = (("-XX-"), ("-XX-"), ("----"), ("----")), \
           (("-XX-"), ("-XX-"), ("----"), ("----")), \
           (("-XX-"), ("-XX-"), ("----"), ("----")), \
           (("-XX-"), ("-XX-"), ("----"), ("----"))
-
 SHAPE_S = (("----"), ("-XX-"), ("XX--"), ("----")), \
           (("-X--"), ("-XX-"), ("--X-"), ("----")), \
           (("----"), ("-XX-"), ("XX--"), ("----")), \
           (("-X--"), ("-XX-"), ("--X-"), ("----"))
-
 SHAPE_T = (("XXX-"), ("-X--"), ("----"), ("----")), \
           (("--X-"), ("-XX-"), ("--X-"), ("----")), \
           (("-X--"), ("XXX-"), ("----"), ("----")), \
           (("X---"), ("XX--"), ("X---"), ("----"))
-
 SHAPE_Z = (("----"), ("-XX-"), ("--XX"), ("----")), \
           (("--X-"), ("-XX-"), ("-X--"), ("----")), \
           (("----"), ("-XX-"), ("--XX"), ("----")), \
           (("--X-"), ("-XX-"), ("-X--"), ("----"))
-
 # List of shapes
-#SHAPES = (SHAPE_I, SHAPE_J, SHAPE_L, SHAPE_O, SHAPE_S, SHAPE_T, SHAPE_Z)
-
+SHAPES = (SHAPE_I, SHAPE_J, SHAPE_L, SHAPE_O, SHAPE_S, SHAPE_T, SHAPE_Z)
 # Shape Colors - Dictionary
 SHAPE_COLOR = {SHAPE_I: BLUE,
                SHAPE_J: PURPLE,
@@ -95,7 +91,7 @@ SHAPE_COLOR = {SHAPE_I: BLUE,
                SHAPE_S: WHITE,
                SHAPE_T: FUCHSIA,
                SHAPE_Z: AQUA}
-#Colors, web colors - dictionary
+# Colors, web colors - dictionary
 COLOR_COLOR = {BLACK: 0,
                YELLOW: 1,
                BLUE: 2,
@@ -105,39 +101,41 @@ COLOR_COLOR = {BLACK: 0,
                WHITE: 6,
                FUCHSIA: 7,
                AQUA: 8}
-
+# This is a reverse dictionary finder
 find_color = dict([[value, key] for key, value in COLOR_COLOR.items()])
-
 # All possible combinations of rotations
 ROTATE_0_DEGREES = 0
 ROTATE_90_DEGREES = 1
 ROTATE_180_DEGREES = 2
 ROTATE_270_DEGREES = 3
-
 # This is the size of one shape, 4 x 4
 SHAPE_SIZE = 4
 
-# Shapes
+
 class Shape(object):
     """A class for shapes"""
     def __init__(self, name, rotation, pos_y, pos_x):
-        self.name = name
-        self.rotation = rotation
-        self.pos_x = pos_x
-        self.pos_y = pos_y
+        self.name = name            # Name of the shape, e.g. SHAPE_T
+        self.rotation = rotation    # Rotation index of the shape
+        self.pos_x = pos_x          # X position of the shape, it can be from 1 to 10
+        self.pos_y = pos_y          # Y position of the shape, it can be from 1 to 20
 
-    def drawBox(self):
+    def drawShapeOnScreen(self):
+        """
+        This method draws all boxes that form a shape on the screen
+        and outline each box with a black edge line
+        """
         piece = self.name[self.rotation]
         for x in range(SHAPE_SIZE):
             for y in range(SHAPE_SIZE):
-                if piece[y][x] != '-':
-                    # This line draws all the squares
+                if piece[y][x] != EMPTY_BOX:
+                    # This line draws all the squares on the screen
                     pygame.draw.rect(DISPLAY_SURFACE, SHAPE_COLOR[self.name],
                                      (x * BOX_SIZE + TOP_X + BOX_SIZE * self.pos_x,
                                       y * BOX_SIZE + TOP_Y + BOX_SIZE * self.pos_y,
                                       BOX_SIZE,
                                       BOX_SIZE))
-                    # This line outlines each square with 1 pixel black line
+                    # The following lines outline each square with 1 pixel black line
                     # Top vertical
                     pygame.draw.line(DISPLAY_SURFACE, BLACK,
                                      (x * BOX_SIZE + TOP_X + BOX_SIZE * self.pos_x,
@@ -166,11 +164,14 @@ class Shape(object):
                                       y * BOX_SIZE + TOP_Y + BOX_SIZE * self.pos_y + BOX_SIZE),
                                      1)
 
-    def eraseBox(self):
+    def deleteShapeFromScreen(self):
+        """
+        This method deletes the shape from the screen
+        """
         piece = self.name[self.rotation]
         for x in range(SHAPE_SIZE):
             for y in range(SHAPE_SIZE):
-                if piece[y][x] != '-':
+                if piece[y][x] != EMPTY_BOX:
                     # This line erases all the squares
                     pygame.draw.rect(DISPLAY_SURFACE, BLACK,
                                      (x * BOX_SIZE + TOP_X + BOX_SIZE * self.pos_x,
@@ -178,211 +179,228 @@ class Shape(object):
                                       BOX_SIZE, BOX_SIZE))
 
 
-    def deleteArenaBox(self):
+    def deleteShapeFromMatrix(self):
+        """
+        This method deletes the shape from the matrix
+        """
         piece = self.name[self.rotation]
         for x in range(SHAPE_SIZE):
             for y in range(SHAPE_SIZE):
-                if x + self.pos_x < 11 and y + self.pos_y < 21 and piece[y][x] == 'X':
-                    ARENA[y + self.pos_y][x + self.pos_x] = COLOR_COLOR[BLACK]
-        resetArena()
+                if x + self.pos_x < (MATRIX_WIDTH - 1) \
+                        and y + self.pos_y < (MATRIX_HEIGHT -1) \
+                        and piece[y][x] == FULL_BOX:
+                    MATRIX[y + self.pos_y][x + self.pos_x] = COLOR_COLOR[BLACK]
+        resetMatrix()
 
     def returnMaxWidth(self):
-        '''find max widht of a shape'''
+        """
+        Each shape is 4 x 4, but the actual width is different
+        for each shape, e.g. horizontal "I" shape is 4 boxes in width
+        but the same vertical shape is 2 boxes in width
+        This method returns the width from the left. See the shape definition above
+        """
         max_x = 0
         piece = self.name[self.rotation]
         for x in range(SHAPE_SIZE):
             for y in range(SHAPE_SIZE):
-                if piece[x][y] == 'X' and y > max_x :
+                if piece[x][y] == FULL_BOX and y > max_x :
                     max_x = y
         return max_x
 
     def returnMinWidth(self):
-        '''find min widht of a shape'''
+        """
+        Each shape is 4 x 4, but the actual width is different
+        for each shape, e.g. horizontal "I" shape is 4 boxes in width
+        but the same vertical shape is 2 boxes in width
+        This method returns the width from right. See the shape definition above
+        """
         min_x = SHAPE_SIZE
         piece = self.name[self.rotation]
         for x in range(SHAPE_SIZE):
             for y in range(SHAPE_SIZE):
-                if piece[x][y] == 'X' and y < min_x :
+                if piece[x][y] == FULL_BOX and y < min_x :
                     min_x = y
         return min_x
 
     def returnMaxHeight(self):
-        '''find max height of a shape'''
+        """
+        Each shape is 4 x 4, but the actual height is different
+        for each shape, e.g. horizontal "I" shape is 2 boxes in width
+        but the same vertical shape is 4 boxes in height
+        This method returns the height. See the shape definition above
+        """
         max_y = 0
         piece = self.name[self.rotation]
         for x in range(SHAPE_SIZE):
             for y in range(SHAPE_SIZE):
-                if piece[x][y] == 'X' and x > max_y :
+                if piece[x][y] == FULL_BOX and x > max_y :
                     max_y = x
         return max_y
 
     def returnMaxHeightPerColumn(self, column):
+        """
+        Each shape is 4 x 4, but the actual height is different per column
+        for each shape, e.g. horizontal "T" shape can be 1 boxes or 3 boxes in height
+        This method return the max height and that's the box that's the lowest in a shape
+        """
         max_y = 0
         piece = self.name[self.rotation]
         for y in range(SHAPE_SIZE):
-            #print piece[y][column]
-            if piece[y][column] == 'X' and y > max_y:
+            if piece[y][column] == FULL_BOX and y > max_y:
                 max_y = y
         return max_y
 
     def moveLeft(self):
+        """
+        Move the shape left if possible
+        """
         if isAvailableLeft(self):
-            self.deleteArenaBox()
-            self.eraseBox()
+            self.deleteShapeFromMatrix()
+            self.deleteShapeFromScreen()
             self.pos_x -= 1
-            updateArena(self)
-            self.drawBox()
+            updateShapeInMatrix(self)
+            self.drawShapeOnScreen()
 
     def moveRight(self):
-         if isAvailableRight(self):
-            self.deleteArenaBox()
-            self.eraseBox()
+        """
+        Move the shape right if possible
+        """
+        if isAvailableRight(self):
+            self.deleteShapeFromMatrix()
+            self.deleteShapeFromScreen()
             self.pos_x += 1
-            updateArena(self)
-            self.drawBox()
+            updateShapeInMatrix(self)
+            self.drawShapeOnScreen()
 
     def moveDown(self):
+        """
+        Move the shape down if possible
+        """
         if isAvailableDown(self):
-            self.deleteArenaBox()
-            self.eraseBox()
+            self.deleteShapeFromMatrix()
+            self.deleteShapeFromScreen()
             self.pos_y += 1
-            updateArena(self)
-            self.drawBox()
+            updateShapeInMatrix(self)
+            self.drawShapeOnScreen()
 
     def moveRotate(self):
+        """
+        Rotate the shape if possible
+        """
         if isAvailableRotate(self):
-            self.deleteArenaBox()
-            self.eraseBox()
+            self.deleteShapeFromMatrix()
+            self.deleteShapeFromScreen()
             self.rotation += 1
             if self.rotation == 4:
                 self.rotation = 0
-            updateArena(self)
-            self.drawBox()
+            updateShapeInMatrix(self)
+            self.drawShapeOnScreen()
 
-def resetArena():
+def resetMatrix():
+    """
+    Updates the edges of the matrix in memory, that's the YELLOW borders
+    """
     for x in range(0, MATRIX_HEIGHT):
-        ARENA[x][0] = COLOR_COLOR[YELLOW]
-        ARENA[x][MATRIX_WIDTH - 1] = COLOR_COLOR[YELLOW]
+        MATRIX[x][0] = COLOR_COLOR[YELLOW]
+        MATRIX[x][MATRIX_WIDTH - 1] = COLOR_COLOR[YELLOW]
     for y in range(0, MATRIX_WIDTH):
-        ARENA[0][y] = COLOR_COLOR[YELLOW]
-        ARENA[MATRIX_HEIGHT - 1][y] = COLOR_COLOR[YELLOW]
+        MATRIX[0][y] = COLOR_COLOR[YELLOW]
+        MATRIX[MATRIX_HEIGHT - 1][y] = COLOR_COLOR[YELLOW]
 
 def isAvailable(Shape):
-    Allowed = True
+    """
+    Is the shape available to be moved in the matrix
+    Checks the new position initially when dropping it for the first time
+    """
+    allowed = True
     piece = Shape.name[Shape.rotation]
     for x in range(SHAPE_SIZE):
         for y in range(SHAPE_SIZE):
-            #print piece[y][x]
-            if piece[y][x] == 'X' and ARENA[y + Shape.pos_y][x + Shape.pos_x] >= COLOR_COLOR[YELLOW]:
-                Allowed = False
+            if piece[y][x] == FULL_BOX and \
+                            MATRIX[y + Shape.pos_y][x + Shape.pos_x] >= COLOR_COLOR[YELLOW]:
+                allowed = False
                 break
-    #print "isAvailable: ", Allowed
-    return Allowed
+    return allowed
 
 def isAvailableLeft(Shape):
-    Allowed = True
+    """
+    Is the shape available to be moved left in the matrix
+    """
+    allowed = True
     piece = Shape.name[Shape.rotation]
     for y in range(SHAPE_SIZE):
-        if piece[y][Shape.returnMinWidth()] == 'X' \
-                and ARENA[y + Shape.pos_y][Shape.pos_x +Shape.returnMinWidth() - 1] >= COLOR_COLOR[YELLOW] :
-            Allowed = False
+        if piece[y][Shape.returnMinWidth()] == FULL_BOX \
+                and MATRIX[y + Shape.pos_y][Shape.pos_x +Shape.returnMinWidth() - 1] >= COLOR_COLOR[YELLOW] :
+            allowed = False
             break
-    #print "isAvailable: ", Allowed
-    return Allowed
+    return allowed
 
 def isAvailableRight(Shape):
-    Allowed = True
+    """
+    Is the shape available to be moved right in the matrix
+    """
+    allowed = True
     piece = Shape.name[Shape.rotation]
     for y in range(SHAPE_SIZE):
-        if piece[y][Shape.returnMaxWidth()] == 'X' \
-                and ARENA[y + Shape.pos_y][Shape.pos_x + Shape.returnMaxWidth() + 1 ] >= COLOR_COLOR[YELLOW]:
-            Allowed = False
+        if piece[y][Shape.returnMaxWidth()] == FULL_BOX \
+                and MATRIX[y + Shape.pos_y][Shape.pos_x + Shape.returnMaxWidth() + 1] >= COLOR_COLOR[YELLOW]:
+            allowed = False
             break
-    #print "isAvailableRight: ", Allowed
-    return Allowed
-
+    return allowed
 
 def isAvailableRotate(Shape):
-    Allowed = True
-    maxx1= Shape.returnMaxWidth()
-    minn1 = Shape. returnMinWidth()
-    maxx3 = Shape.returnMaxHeight()
-    old_rotation = Shape.rotation
+    """
+    Is the shape available to be moved rotated in the matrix
+    """
+    allowed = True
+    oldMaxWidth= Shape.returnMaxWidth()
+    oldMinWidth = Shape. returnMinWidth()
+    oldMaxHeight = Shape.returnMaxHeight()
+    oldRotation = Shape.rotation
     Shape.rotation += 1
     if Shape.rotation == 4:
         Shape.rotation = 0
-    maxx2 = Shape.returnMaxWidth()
-    minn2 = Shape.returnMinWidth()
-    maxx4 = Shape.returnMaxHeight()
-    if (minn2 - minn1) + Shape.pos_x < 0 or (maxx2 - maxx1) + Shape.pos_x >= 9:
-        #print minn2 -minn1, Shape.pos_x
-        #print "ovde false"
-        Allowed = False
-    if (maxx4 - maxx3) + Shape.pos_y >=20:
-        #print "ovde ovde false"
-        Allowed = False
-    #if minn2 < minn1 and Shape.pos_x < 1:
-    #    Allowed = False
-    Shape.rotation = old_rotation
-    #print "isAvailableRotate: ", Allowed
-    return Allowed
+    newMaxWidth = Shape.returnMaxWidth()
+    newMinWidth = Shape.returnMinWidth()
+    newMaxHeight = Shape.returnMaxHeight()
+    if (newMinWidth - oldMinWidth) + Shape.pos_x < 0 \
+            or (newMaxWidth - oldMaxWidth) + Shape.pos_x >= (MATRIX_WIDTH - 2):
+        allowed = False
+    if (newMaxHeight - oldMaxHeight) + Shape.pos_y >= (MATRIX_HEIGHT -2):
+        allowed = False
+    Shape.rotation = oldRotation
+    return allowed
 
 def isAvailableDown(Shape):
-    Allowed = True
+    """
+    Is the shape available to be moved down in the matrix
+    """
+    allowed = True
     piece = Shape.name[Shape.rotation]
     for x in range(SHAPE_SIZE):
-        if piece[Shape.returnMaxHeightPerColumn(x)][x] == 'X' and \
-                        ARENA[Shape.pos_y + Shape.returnMaxHeightPerColumn(x) + 1][x + Shape.pos_x] >= COLOR_COLOR[YELLOW] :
-            Allowed = False
+        if piece[Shape.returnMaxHeightPerColumn(x)][x] == FULL_BOX and \
+                        MATRIX[Shape.pos_y + Shape.returnMaxHeightPerColumn(x) + 1][x + Shape.pos_x] >= COLOR_COLOR[YELLOW] :
+            allowed = False
             break
-    #print "isAvailableDown: ", Allowed
-    return Allowed
+    return allowed
 
-def updateArena(Shape):
+def updateShapeInMatrix(Shape):
+    """
+    Updates the matrix with the moved shape
+    """
     piece = Shape.name[Shape.rotation]
     for x in range(SHAPE_SIZE):
         for y in range(SHAPE_SIZE):
-            k = piece[y][x]
-            poz_y = y + Shape.pos_y
-            poz_x = x + Shape.pos_x
-            #print COLOR_COLOR[SHAPE_COLOR[Shape.name]]
-            if piece[y][x] == "X" and poz_y in range (1,21) and poz_x in range(1,11) and ARENA[poz_y][poz_x] == COLOR_COLOR[BLACK]:
-                ARENA[poz_y][poz_x] = COLOR_COLOR[SHAPE_COLOR[Shape.name]]
-            #if piece[y][x] == "-" and poz_y in range (1,21) and poz_x in range(1,11) and ARENA[poz_y][poz_x] == 0:
-            #    print "true"
-            #    ARENA[poz_y][poz_x] = 0
-    resetArena()
-    #ARENA[2][1] = 1
-    #ARENA[10][1] = 1
-    #ARENA[20][1] = 1
-    #ARENA[10][10] = 1
-    #print ARENA[0]
-    print ARENA[1]
-    print ARENA[2]
-    print ARENA[3]
-    print ARENA[4]
-    print ARENA[5]
-    print ARENA[6]
-    print ARENA[7]
-    print ARENA[8]
-    print ARENA[9]
-    print ARENA[10]
-    print ARENA[11]
-    print ARENA[12]
-    print ARENA[13]
-    print ARENA[14]
-    print ARENA[15]
-    print ARENA[16]
-    print ARENA[17]
-    print ARENA[18]
-    print ARENA[19]
-    print ARENA[20]
-    #print ARENA[21]
-    print "---------------"
-def drawArena():
-    '''
+            if piece[y][x] == "X" and (y + Shape.pos_y) in range (1, MATRIX_HEIGHT - 1) \
+                    and (x + Shape.pos_x) in range(1, MATRIX_WIDTH - 1) \
+                    and MATRIX[y + Shape.pos_y][x + Shape.pos_x] == COLOR_COLOR[BLACK]:
+                MATRIX[y + Shape.pos_y][x + Shape.pos_x] = COLOR_COLOR[SHAPE_COLOR[Shape.name]]
+    resetMatrix()
+
+def drawMatrixOnScreen():
+    """
     Draws four bars where the game occurs
-    '''
+    """
     # Left bar
     pygame.draw.rect(DISPLAY_SURFACE, YELLOW, (TOP_X,
                                                TOP_Y,
@@ -405,11 +423,17 @@ def drawArena():
                                                BOX_SIZE))
 
 def checkFullLine():
+    """
+    Check if there is a full horizontal line in the matrix.
+    """
     for x in range(MATRIX_HEIGHT - 2, 0, - 1):
-        if 0 not in ARENA[x]:
+        if 0 not in MATRIX[x]:
             return x
 
-def writeText(msg, FONT, x_cor, y_cor, b_color, f_color):
+def printText(msg, FONT, x_cor, y_cor, b_color, f_color):
+    """
+    Writes Text on the screen
+    """
     text = FONT.render(msg, True, b_color, f_color)
     textRect = text.get_rect()
     textRect.centerx = x_cor
@@ -417,16 +441,25 @@ def writeText(msg, FONT, x_cor, y_cor, b_color, f_color):
     DISPLAY_SURFACE.blit(text, textRect)
 
 def drawRectangle(x_cor, y_cor, width, height, color):
+    """
+    Draws rectangle on the screen
+    """
     pygame.draw.rect(DISPLAY_SURFACE, color, (x_cor, y_cor, width, height))
 
-def drawScore(score):
-    writeText('SCORE:', FONT_SMALL, 490, 240, WHITE, BLACK)
-    writeText(str(score), FONT_SMALL, 580, 240, WHITE, BLACK)
+def printScore(score):
+    """
+    Prints score on the screen
+    """
+    printText('SCORE:', FONT_SMALL, 490, 240, WHITE, BLACK)
+    printText(str(score), FONT_SMALL, 580, 240, WHITE, BLACK)
 
-def shiftShapes(row):
+def shiftShapesOnScreen(row):
+    """
+    Shift shapes down on the screen when one line is full and collapses
+    """
     for col in range(1, MATRIX_WIDTH -1):
         pygame.draw.rect(DISPLAY_SURFACE,
-                         find_color[ARENA[row][col]],
+                         find_color[MATRIX[row][col]],
                          (TOP_X + BOX_SIZE * col,
                           TOP_Y + BOX_SIZE * row,
                           BOX_SIZE,
@@ -461,11 +494,14 @@ def shiftShapes(row):
             TOP_Y + BOX_SIZE * row + BOX_SIZE),
             1)
 
-def shiftArena(row):
+def shiftShapesInMatrix(row):
+    """
+    Shift shapes down in the matrix when one line is full and collapses
+    """
     while row > 1:
         for xx in range(1, MATRIX_WIDTH):
-            ARENA[row][xx] = ARENA[row - 1][xx]
-        shiftShapes(row)
+            MATRIX[row][xx] = MATRIX[row - 1][xx]
+        shiftShapesOnScreen(row)
         row -= 1
 
 def main():
@@ -473,34 +509,31 @@ def main():
     pygame.init()
     FPS_CLOCK = pygame.time.Clock()
     DISPLAY_SURFACE = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-    pygame.display.set_caption('Tetrominox')
+    pygame.display.set_caption('KAtrix')
     FONT_BIG = pygame.font.SysFont(None, 48)
     FONT_SMALL = pygame.font.SysFont(None, 24)
     FONT_SUPER_SMALL = pygame.font.SysFont(None, 12)
     DISPLAY_SURFACE.fill(BLACK)
-    resetArena()
-    drawArena()
+    resetMatrix()
+    drawMatrixOnScreen()
     SCORE = 0
-    drawScore(SCORE)
-    writeText('Program by: Kliment ANDREEV, 2015', FONT_SUPER_SMALL, 320, 470, SILVER, BLACK)
+    printScore(SCORE)
+    printText('Program by: Kliment ANDREEV, 2015', FONT_SUPER_SMALL, 320, 470, SILVER, BLACK)
     # MAIN GAME LOOP
     while True:
         new_shape = Shape(SHAPES[random.randint(0, len(SHAPES) - 1)], ROTATE_0_DEGREES, 1, START_COL)
-        #new_shape = Shape(SHAPE_I, ROTATE_0_DEGREES, 1, 3)
         NewPiece = True
         if isAvailable(new_shape):
-            Shape.drawBox(new_shape)
-            #print "new shape"
-            updateArena(new_shape)
+            Shape.drawShapeOnScreen(new_shape)
+            updateShapeInMatrix(new_shape)
         else:
             NewPiece=False
-            Shape.drawBox(new_shape)
+            Shape.drawShapeOnScreen(new_shape)
             print "no new piece...G A M E    O V E R"
             pygame.display.update()
             pygame.time.delay(3000)
             pygame.quit()
             sys.exit()
-
         while NewPiece:
             for event in pygame.event.get():
                 if event.type == QUIT:
@@ -516,19 +549,13 @@ def main():
                     elif (event.key == K_DOWN):
                         Shape.moveDown(new_shape)
                     elif (event.key == K_SPACE):
-                        #Shape.moveDown(new_shape)
                         while isAvailableDown(new_shape):
                             Shape.moveDown(new_shape)
-                            #updateArena(new_shape)
                         NewPiece = False
                         while checkFullLine() > 0:
-                        #if checkFullLine() > 0:
                             SCORE += 10
-                            drawScore(SCORE)
-                            shiftArena(checkFullLine())
-
-                        #print x
-                        #print "OK. NEW PIECE COMING"
+                            printScore(SCORE)
+                            shiftShapesInMatrix(checkFullLine())
             pygame.display.update()
             FPS_CLOCK.tick(FPS)
 

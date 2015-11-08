@@ -510,7 +510,7 @@ def main():
     FPS_CLOCK = pygame.time.Clock()
     DISPLAY_SURFACE = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     pygame.display.set_caption('KAtrix')
-    FONT_BIG = pygame.font.SysFont(None, 48)
+    FONT_BIG = pygame.font.SysFont(None, 44)
     FONT_SMALL = pygame.font.SysFont(None, 24)
     FONT_SUPER_SMALL = pygame.font.SysFont(None, 12)
     DISPLAY_SURFACE.fill(BLACK)
@@ -529,7 +529,8 @@ def main():
         else:
             NewPiece=False
             Shape.drawShapeOnScreen(new_shape)
-            print "no new piece...G A M E    O V E R"
+            drawRectangle(TOP_X, WINDOW_HEIGHT / 2 - 50, 241, 160, BLUE)
+            printText("G A M E  O V E R", FONT_BIG, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2 + 30, YELLOW, BLUE)
             pygame.display.update()
             pygame.time.delay(3000)
             pygame.quit()

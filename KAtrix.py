@@ -429,7 +429,8 @@ def checkFullLine():
     for x in range(MATRIX_HEIGHT - 2, 0, - 1):
         if 0 not in MATRIX[x]:
             return x
-
+        else:
+            return 0
 def printText(msg, FONT, x_cor, y_cor, b_color, f_color):
     """
     Writes Text on the screen
@@ -543,6 +544,8 @@ def main():
                 if event.type == KEYDOWN:
                     if (event.key == K_LEFT):
                         Shape.moveLeft(new_shape)
+                    elif (event.key == K_ESCAPE):
+                        sys.exit()
                     elif (event.key == K_RIGHT):
                         Shape.moveRight(new_shape)
                     elif (event.key == K_UP):

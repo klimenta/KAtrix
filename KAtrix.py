@@ -1,5 +1,5 @@
 __author__ = 'Kliment Andreev'
-__version__ = '20151108 15:48'
+__version__ = '20201227 15:48'
 
 # Imports
 import random
@@ -11,6 +11,8 @@ from pygame.locals import *
 # Constants and dictionaries
 # Frames per second
 FPS = 25
+# Delay ms for a shape to go down
+DELAY = 1000
 # The top left column where the falling shape is positioned initially
 START_COL = 4
 # Represent a box or empty space for a shape
@@ -110,7 +112,6 @@ ROTATE_180_DEGREES = 2
 ROTATE_270_DEGREES = 3
 # This is the size of one shape, 4 x 4
 SHAPE_SIZE = 4
-
 
 class Shape(object):
     """A class for shapes"""
@@ -350,7 +351,7 @@ def isAvailableRight(Shape):
 
 def isAvailableRotate(Shape):
     """
-    Is the shape available to be moved rotated in the matrix
+    Is the shape available to be rotated in the matrix
     """
     allowed = True
     oldMaxWidth= Shape.returnMaxWidth()
@@ -428,9 +429,9 @@ def checkFullLine():
     """
     for x in range(MATRIX_HEIGHT - 2, 0, - 1):
         if 0 not in MATRIX[x]:
-            return x
-        else:
-            return 0
+            return x      
+    return 0
+
 def printText(msg, FONT, x_cor, y_cor, b_color, f_color):
     """
     Writes Text on the screen
@@ -509,6 +510,7 @@ def main():
     global FPS_CLOCK, DISPLAY_SURFACE, FONT_BIG, FONT_SMALL, FONT_SUPER_SMALL, SCORE
     pygame.init()
     FPS_CLOCK = pygame.time.Clock()
+    count_ms = 0
     DISPLAY_SURFACE = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     pygame.display.set_caption('KAtrix')
     FONT_BIG = pygame.font.SysFont(None, 44)
@@ -519,7 +521,7 @@ def main():
     drawMatrixOnScreen()
     SCORE = 0
     printScore(SCORE)
-    printText('Program by: Kliment ANDREEV, 2015', FONT_SUPER_SMALL, 320, 470, SILVER, BLACK)
+    printText('Program by: Kliment ANDREEV, 2015 - 2020', FONT_SMALL, 320, 470, SILVER, BLACK)
     # MAIN GAME LOOP
     while True:
         new_shape = Shape(SHAPES[random.randint(0, len(SHAPES) - 1)], ROTATE_0_DEGREES, 1, START_COL)
@@ -537,6 +539,7 @@ def main():
             pygame.quit()
             sys.exit()
         while NewPiece:
+            passed_ms = FPS_CLOCK.tick(FPS)
             for event in pygame.event.get():
                 if event.type == QUIT:
                     pygame.quit()
@@ -560,8 +563,12 @@ def main():
                             SCORE += 10
                             printScore(SCORE)
                             shiftShapesInMatrix(checkFullLine())
+            count_ms += passed_ms
+            if count_ms >= DELAY:
+                count_ms = count_ms % DELAY
+                if (isAvailableDown(new_shape)):
+                    Shape.moveDown(new_shape)
+                else: NewPiece = False          
             pygame.display.update()
-            FPS_CLOCK.tick(FPS)
-
 if __name__ == '__main__':
     main()
